@@ -1,12 +1,14 @@
 import random
 import warnings
 from collections.abc import Sequence
+from distutils.version import LooseVersion
 
 import mmcv
 import numpy as np
 from torch.nn.modules.utils import _pair
 
 from ..builder import PIPELINES
+from .formating import to_tensor
 
 
 def _combine_quadruple(a, b):
@@ -49,6 +51,43 @@ def _init_lazy_if_proper(results, lazy):
             results['lazy'] = lazyop
     else:
         assert 'lazy' not in results, 'Use Fuse after lazy operations'
+
+
+@PIPELINES.register_module()
+class TorchvisionTrans:
+    """Torchvision Augmentations, under torchvision.transforms.
+
+    Args:
+        type (str): The name of the torchvision transformation.
+    """
+
+    def __init__(self, type, **kwargs):
+        try:
+            import torchvision
+            import torchvision.transforms as tv_trans
+        except ImportError:
+            raise RuntimeError('Install torchvision to use TorchvisionTrans')
+        if LooseVersion(torchvision.__version__) < LooseVersion('0.8.0'):
+            raise RuntimeError('The version of torchvision should be at least '
+                               '0.8.0')
+
+        trans = getattr(tv_trans, type, None)
+        assert trans, f'Transform {type} not in torchvision'
+        self.trans = trans(**kwargs)
+
+    def __call__(self, results):
+        assert 'imgs' in results
+
+        imgs = [x.transpose(2, 0, 1) for x in results['imgs']]
+        imgs = to_tensor(np.stack(imgs))
+
+        imgs = self.trans(imgs).data.numpy()
+        imgs[imgs > 255] = 255
+        imgs[imgs < 0] = 0
+        imgs = imgs.astype(np.uint8)
+        imgs = [x.transpose(1, 2, 0) for x in imgs]
+        results['imgs'] = imgs
+        return results
 
 
 @PIPELINES.register_module()
@@ -154,35 +193,6 @@ class PoseCompact:
         return repr_str
 
 
-class EntityBoxRescale:
-
-    def __init__(self, scale_factor):
-        raise NotImplementedError(
-            'This component should not be used in the '
-            'data pipeline and is removed in PR #782. Details see '
-            'https://github.com/open-mmlab/mmaction2/pull/782')
-
-
-@PIPELINES.register_module()
-class EntityBoxCrop:
-
-    def __init__(self, crop_bbox):
-        raise NotImplementedError(
-            'This component should not be used in the '
-            'data pipeline and is removed in PR #782. Details see '
-            'https://github.com/open-mmlab/mmaction2/pull/782')
-
-
-@PIPELINES.register_module()
-class EntityBoxFlip:
-
-    def __init__(self, img_shape):
-        raise NotImplementedError(
-            'This component should not be used in the '
-            'data pipeline and is removed in PR #782. Details see '
-            'https://github.com/open-mmlab/mmaction2/pull/782')
-
-
 @PIPELINES.register_module()
 class Imgaug:
     """Imgaug augmentation.
@@ -274,7 +284,8 @@ class Imgaug:
             self.aug = iaa.Sequential(
                 [self.imgaug_builder(t) for t in self.transforms])
 
-    def default_transforms(self):
+    @staticmethod
+    def default_transforms():
         """Default transforms for imgaug.
 
         Implement RandAugment by imgaug.
@@ -327,8 +338,8 @@ class Imgaug:
                         type='Cutout',
                         nb_iterations=1,
                         size=0.2 * cur_level,
-                        squared=True),
-                ]),
+                        squared=True)
+                ])
         ]
 
     def imgaug_builder(self, cfg):
@@ -554,14 +565,17 @@ class RandomCrop:
         self.size = size
         self.lazy = lazy
 
-    def _crop_kps(self, kps, crop_bbox):
+    @staticmethod
+    def _crop_kps(kps, crop_bbox):
         return kps - crop_bbox[:2]
 
-    def _crop_imgs(self, imgs, crop_bbox):
+    @staticmethod
+    def _crop_imgs(imgs, crop_bbox):
         x1, y1, x2, y2 = crop_bbox
         return [img[y1:y2, x1:x2] for img in imgs]
 
-    def _box_crop(self, box, crop_bbox):
+    @staticmethod
+    def _box_crop(box, crop_bbox):
         """Crop the bounding boxes according to the crop_bbox.
 
         Args:
@@ -1069,10 +1083,12 @@ class Resize:
             for img in imgs
         ]
 
-    def _resize_kps(self, kps, scale_factor):
+    @staticmethod
+    def _resize_kps(kps, scale_factor):
         return kps * scale_factor
 
-    def _box_resize(self, box, scale_factor):
+    @staticmethod
+    def _box_resize(box, scale_factor):
         """Rescale the bounding boxes according to the scale_factor.
 
         Args:
@@ -1264,7 +1280,8 @@ class Flip:
             kpscores = kpscores[:, :, new_order]
         return kps, kpscores
 
-    def _box_flip(self, box, img_width):
+    @staticmethod
+    def _box_flip(box, img_width):
         """Flip the bounding boxes given the width of the image.
 
         Args:
