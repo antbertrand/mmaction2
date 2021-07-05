@@ -37,6 +37,10 @@ def confusion_matrix(y_pred, y_real, normalize=None):
         raise TypeError(
             f'y_real dtype must be np.int64, but got {y_real.dtype}')
 
+    print(y_pred)
+    print(y_real)
+    y_real = [y[0] for y in y_real]
+    print(y_real)
     label_set = np.unique(np.concatenate((y_pred, y_real)))
     num_labels = len(label_set)
     max_label = label_set[-1]
@@ -45,7 +49,9 @@ def confusion_matrix(y_pred, y_real, normalize=None):
         label_map[label] = i
 
     y_pred_mapped = label_map[y_pred]
+    print("y_pred_mapped", y_pred_mapped)
     y_real_mapped = label_map[y_real]
+    print("y_real_mapped", y_real_mapped)
 
     confusion_mat = np.bincount(
         num_labels * y_real_mapped + y_pred_mapped,
@@ -76,8 +82,10 @@ def mean_class_accuracy(scores, labels):
         np.ndarray: Mean class accuracy.
     """
     pred = np.argmax(scores, axis=1)
+    print("PRED", pred)
+    print("LABELS", labels)
     cf_mat = confusion_matrix(pred, labels).astype(float)
-
+    print(cf_mat)
     cls_cnt = cf_mat.sum(axis=1)
     cls_hit = np.diag(cf_mat)
 
@@ -101,7 +109,11 @@ def top_k_accuracy(scores, labels, topk=(1, )):
     res = []
     labels = np.array(labels)[:, np.newaxis]
     for k in topk:
+        print('='*20)
+        # print('k=',k)
         max_k_preds = np.argsort(scores, axis=1)[:, -k:][:, ::-1]
+        # print(max_k_preds, labels)
+        # print(max_k_preds.shape, labels.shape)
         match_array = np.logical_or.reduce(max_k_preds == labels, axis=1)
         topk_acc_score = match_array.sum() / match_array.shape[0]
         res.append(topk_acc_score)

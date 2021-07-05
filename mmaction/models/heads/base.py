@@ -87,6 +87,7 @@ class BaseHead(nn.Module, metaclass=ABCMeta):
             labels = labels.unsqueeze(0)
 
         if not self.multi_class and cls_score.size() != labels.size():
+            print("HEY")
             top_k_acc = top_k_accuracy(cls_score.detach().cpu().numpy(),
                                        labels.detach().cpu().numpy(), (1, 5))
             losses['top1_acc'] = torch.tensor(
@@ -95,6 +96,7 @@ class BaseHead(nn.Module, metaclass=ABCMeta):
                 top_k_acc[1], device=cls_score.device)
 
         elif self.multi_class and self.label_smooth_eps != 0:
+            print("YO")
             labels = ((1 - self.label_smooth_eps) * labels +
                       self.label_smooth_eps / self.num_classes)
 
