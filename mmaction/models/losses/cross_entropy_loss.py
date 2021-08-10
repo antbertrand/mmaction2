@@ -1,9 +1,16 @@
 import torch
 import torch.nn.functional as F
-
+import numpy as np
 from ..builder import LOSSES
 from .base import BaseWeightedLoss
 
+def tile(a, dim, n_tile):
+    init_dim = a.size(dim)
+    repeat_idx = [1] * a.dim()
+    repeat_idx[dim] = n_tile
+    a = a.repeat(*(repeat_idx))
+    order_index = torch.LongTensor(np.concatenate([init_dim * np.arange(n_tile) + i for i in range(init_dim)]))
+    return torch.index_select(a, dim, order_index)
 
 @LOSSES.register_module()
 class CrossEntropyLoss(BaseWeightedLoss):
@@ -47,7 +54,12 @@ class CrossEntropyLoss(BaseWeightedLoss):
         Returns:
             torch.Tensor: The returned CrossEntropy loss.
         """
+        #print(cls_score, label)
+        #print(cls_score.size(), label.size())
+        
+        #print(label)
         if cls_score.size() == label.size():
+            #print('yeah')
             # calculate loss for soft label
 
             assert cls_score.dim() == 2, 'Only support 2-dim soft label'
@@ -69,12 +81,27 @@ class CrossEntropyLoss(BaseWeightedLoss):
             else:
                 loss_cls = loss_cls.mean()
         else:
+            #print('yaouh')
+            label = torch.max(label, 1)[1]
             # calculate loss for hard label
+            
+            #print(cls_score, label)
+            #print(cls_score.size(0), label.size(0))
+
+            n_tile = cls_score.size(0) // label.size(0)
+
+            #label = tile(label, 0, n_tile)
+            label = torch.repeat_interleave(label, repeats=n_tile, dim=0).long()
+            #print(cls_score, label)
+            #print(cls_score.size(0), label.size(0))
 
             if self.class_weight is not None:
                 assert 'weight' not in kwargs, \
                     "The key 'weight' already exists."
                 kwargs['weight'] = self.class_weight.to(cls_score.device)
+            #cls_score = torch.transpose(cls_score, 0, 1)
+            #label = torch.transpose(label, 0, 1).long()
+
             loss_cls = F.cross_entropy(cls_score, label, **kwargs)
 
         return loss_cls

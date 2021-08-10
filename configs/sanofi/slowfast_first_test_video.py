@@ -1,16 +1,13 @@
 _base_ = [
-    '../_base_/models/i3d_r50.py', '../_base_/schedules/sgd_100e.py',
+    '../_base_/models/slowfast_r50.py', '../_base_/schedules/sgd_100e.py',
     '../_base_/default_runtime.py'
 ]
 
+
 model = dict(
     cls_head=dict(
-        num_classes=10,
-        multi_class=True),
-    test_cfg=dict(average_clips='score'))
-# Using different averaging types ('score' or 'prob' or None,
-# which defined in test_cfg) to computed the final averaged
-# class score. Only called in test mode.
+        num_classes=7,
+        multi_class=True))
 
 # dataset settings
 dataset_type = 'VideoDataset'
@@ -21,7 +18,7 @@ test_pipeline = [
     dict(
         type='SampleFrames',
         clip_len=16,
-        frame_interval=3,
+        frame_interval=2,
         num_clips=1,
         test_mode=True),
     dict(type='DecordDecode'),
@@ -39,7 +36,7 @@ data = dict(
         type=dataset_type,
         pipeline=test_pipeline,
         multi_class=True,
-        num_classes=10,
+        num_classes=7,
         modality='RGB'))
 evaluation = dict(
     interval=5, metrics=['top_k_accuracy', 'mean_class_accuracy', 'per_class_accuracy'])

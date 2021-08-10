@@ -19,8 +19,6 @@ def confusion_matrix(y_pred, y_real, normalize=None):
         raise ValueError("normalize must be one of {'true', 'pred', "
                          "'all', None}")
 
-    y_real = [y[0] for y in y_real]
-    
     if isinstance(y_pred, list):
         y_pred = np.array(y_pred)
     if not isinstance(y_pred, np.ndarray):
@@ -47,9 +45,7 @@ def confusion_matrix(y_pred, y_real, normalize=None):
         label_map[label] = i
 
     y_pred_mapped = label_map[y_pred]
-    #print("y_pred_mapped", y_pred_mapped)
     y_real_mapped = label_map[y_real]
-    #print("y_real_mapped", y_real_mapped)
 
     confusion_mat = np.bincount(
         num_labels * y_real_mapped + y_pred_mapped,
@@ -80,9 +76,8 @@ def mean_class_accuracy(scores, labels):
         np.ndarray: Mean class accuracy.
     """
     pred = np.argmax(scores, axis=1)
-    #print("PRED", pred)
-    #print("LABELS", labels)
     cf_mat = confusion_matrix(pred, labels).astype(float)
+
     cls_cnt = cf_mat.sum(axis=1)
     cls_hit = np.diag(cf_mat)
 
@@ -90,25 +85,6 @@ def mean_class_accuracy(scores, labels):
         [hit / cnt if cnt else 0.0 for cnt, hit in zip(cls_cnt, cls_hit)])
 
     return mean_class_acc
-
-def per_class_accuracy(scores, labels):
-    """Calculate per class accuracy.
-
-    Args:
-        scores (list[np.ndarray]): Prediction scores for each class.
-        labels (list[int]): Ground truth labels.
-
-    Returns:
-        np.ndarray: List of the different class accuracy.
-    """
-    pred = np.argmax(scores, axis=1)
-    cf_mat = confusion_matrix(pred, labels).astype(float)
-    cls_cnt = cf_mat.sum(axis=1)
-    cls_hit = np.diag(cf_mat)
-
-    per_class_acc = [hit / cnt if cnt else 0.0 for cnt, hit in zip(cls_cnt, cls_hit)]
-
-    return per_class_acc
 
 
 def top_k_accuracy(scores, labels, topk=(1, )):
@@ -125,11 +101,11 @@ def top_k_accuracy(scores, labels, topk=(1, )):
     res = []
     labels = np.array(labels)[:, np.newaxis]
     for k in topk:
-        # print('='*20)
-        # print('k=',k)
+        print('='*20)
+        print('k=',k)
         max_k_preds = np.argsort(scores, axis=1)[:, -k:][:, ::-1]
-        # print(max_k_preds, labels)
-        # print(max_k_preds.shape, labels.shape)
+        print(max_k_preds, labels)
+        print(max_k_preds.shape, labels.shape)
         match_array = np.logical_or.reduce(max_k_preds == labels, axis=1)
         topk_acc_score = match_array.sum() / match_array.shape[0]
         res.append(topk_acc_score)

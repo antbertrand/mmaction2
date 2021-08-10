@@ -1,27 +1,23 @@
 _base_ = [
-    '../_base_/models/i3d_r50.py', '../_base_/schedules/sgd_100e.py',
+    '../_base_/models/slowfast_r50.py', '../_base_/schedules/sgd_100e.py',
     '../_base_/default_runtime.py'
 ]
 
 model = dict(
     cls_head=dict(
-        num_classes=9,
+        num_classes=7,
         multi_class=True))
-
-# use the pre-trained model
-load_from = 'https://download.openmmlab.com/mmaction/recognition/i3d/i3d_r50_256p_32x2x1_100e_kinetics400_rgb/i3d_r50_256p_32x2x1_100e_kinetics400_rgb_20200801-7d9f44de.pth'  # model path can be found in model zoo
-
 
 # dataset settings
 dataset_type = 'RawframeDataset'
-data_root = '/home/deepo/sanofius/TRAINING/dataset/rawframes_v2'
-ann_file_train = '/home/deepo/sanofius/TRAINING/train_file.txt'
-ann_file_val = '/home/deepo/sanofius/TRAINING/val_file.txt'
-ann_file_test = '/home/deepo/sanofius/TRAINING/test_file.txt'
+data_root = '/home/deepo/sanofius/TRAINING/dataset/rawframes_rgb'
+ann_file_train = '/home/deepo/sanofius/TRAINING/train_file_NOWALK.txt'
+ann_file_val = '/home/deepo/sanofius/TRAINING/val_file_NOWALK.txt'
+ann_file_test = '/home/deepo/sanofius/TRAINING/test_file_NOWALK.txt'    
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_bgr=False)
 train_pipeline = [
-    dict(type='SampleFrames', clip_len=16, frame_interval=3, num_clips=2),
+    dict(type='SampleFrames', clip_len=16, frame_interval=2, num_clips=1),
     #clip_len (int): Frames of each sampled output clip.
     #frame_interval (int): Temporal interval of adjacent sampled frames.
     #num_clips (int): Number of clips to be sampled. Default: 1.
@@ -37,8 +33,8 @@ val_pipeline = [
     dict(
         type='SampleFrames',
         clip_len=16,
-        frame_interval=3,
-        num_clips=2,
+        frame_interval=2,
+        num_clips=1,
         test_mode=True),
     dict(type='RawFrameDecode'),
     dict(type='Resize', scale=(-1, 256)),
@@ -52,8 +48,8 @@ test_pipeline = [
     dict(
         type='SampleFrames',
         clip_len=16,
-        frame_interval=3,
-        num_clips=2,
+        frame_interval=2,
+        num_clips=1,
         test_mode=True),
     dict(type='RawFrameDecode'),
     dict(type='Resize', scale=(-1, 256)),
@@ -72,27 +68,24 @@ data = dict(
         data_prefix=data_root,
         pipeline=train_pipeline,
         multi_class=True,
-        num_classes=9,
-        modality='RGB',
-        dynamic_length=False),
+        num_classes=7,
+        modality='RGB'),
     val=dict(
         type=dataset_type,
         ann_file=ann_file_val,
         data_prefix=data_root,
         pipeline=val_pipeline,
         multi_class=True,
-        num_classes=9,
-        modality='RGB',
-        dynamic_length=False),
+        num_classes=7,
+        modality='RGB'),
     test=dict(
         type=dataset_type,
         ann_file=ann_file_test,
         data_prefix=data_root,
         pipeline=test_pipeline,
         multi_class=True,
-        num_classes=9,
-        modality='RGB',
-        dynamic_length=False))
+        num_classes=7,
+        modality='RGB'))
 evaluation = dict(
     interval=5, metrics=['top_k_accuracy', 'mean_class_accuracy','per_class_accuracy'],
     metric_options=dict(top_k_accuracy=dict(topk=(1, 2))),
