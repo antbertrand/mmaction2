@@ -5,5 +5,4 @@
     other
     rearing 
     resting
-    unrecognized
     walking
