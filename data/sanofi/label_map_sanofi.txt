@@ -1,0 +1,8 @@
+    climbing
+    drinking
+    eating
+    grooming
+    other
+    rearing 
+    resting
+    walking
