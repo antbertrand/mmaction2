@@ -5,7 +5,7 @@ _base_ = [
 
 model = dict(
     cls_head=dict(
-        num_classes=10,
+        num_classes=8,
         multi_class=True),
     test_cfg=dict(average_clips='score'))
 # Using different averaging types ('score' or 'prob' or None,
@@ -21,7 +21,7 @@ test_pipeline = [
     dict(
         type='SampleFrames',
         clip_len=16,
-        frame_interval=3,
+        frame_interval=1,
         num_clips=1,
         test_mode=True),
     dict(type='DecordDecode'),
@@ -39,7 +39,7 @@ data = dict(
         type=dataset_type,
         pipeline=test_pipeline,
         multi_class=True,
-        num_classes=10,
+        num_classes=8,
         modality='RGB'))
 evaluation = dict(
     interval=5, metrics=['top_k_accuracy', 'mean_class_accuracy', 'per_class_accuracy'])

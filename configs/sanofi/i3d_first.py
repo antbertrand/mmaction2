@@ -5,7 +5,7 @@ _base_ = [
 
 model = dict(
     cls_head=dict(
-        num_classes=9,
+        num_classes=8,
         multi_class=True))
 
 # use the pre-trained model
@@ -14,14 +14,14 @@ load_from = 'https://download.openmmlab.com/mmaction/recognition/i3d/i3d_r50_256
 
 # dataset settings
 dataset_type = 'RawframeDataset'
-data_root = '/home/deepo/sanofius/TRAINING/dataset/rawframes_v2'
+data_root = '/home/deepo/sanofius/TRAINING/dataset/rawframes'
 ann_file_train = '/home/deepo/sanofius/TRAINING/train_file.txt'
 ann_file_val = '/home/deepo/sanofius/TRAINING/val_file.txt'
 ann_file_test = '/home/deepo/sanofius/TRAINING/test_file.txt'
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_bgr=False)
 train_pipeline = [
-    dict(type='SampleFrames', clip_len=16, frame_interval=3, num_clips=2),
+    dict(type='SampleFrames', clip_len=16, frame_interval=1, num_clips=2),
     #clip_len (int): Frames of each sampled output clip.
     #frame_interval (int): Temporal interval of adjacent sampled frames.
     #num_clips (int): Number of clips to be sampled. Default: 1.
@@ -37,7 +37,7 @@ val_pipeline = [
     dict(
         type='SampleFrames',
         clip_len=16,
-        frame_interval=3,
+        frame_interval=1,
         num_clips=2,
         test_mode=True),
     dict(type='RawFrameDecode'),
@@ -52,7 +52,7 @@ test_pipeline = [
     dict(
         type='SampleFrames',
         clip_len=16,
-        frame_interval=3,
+        frame_interval=1,
         num_clips=2,
         test_mode=True),
     dict(type='RawFrameDecode'),
@@ -72,7 +72,7 @@ data = dict(
         data_prefix=data_root,
         pipeline=train_pipeline,
         multi_class=True,
-        num_classes=9,
+        num_classes=8,
         modality='RGB',
         dynamic_length=False),
     val=dict(
@@ -81,7 +81,7 @@ data = dict(
         data_prefix=data_root,
         pipeline=val_pipeline,
         multi_class=True,
-        num_classes=9,
+        num_classes=8,
         modality='RGB',
         dynamic_length=False),
     test=dict(
@@ -90,7 +90,7 @@ data = dict(
         data_prefix=data_root,
         pipeline=test_pipeline,
         multi_class=True,
-        num_classes=9,
+        num_classes=8,
         modality='RGB',
         dynamic_length=False))
 evaluation = dict(
